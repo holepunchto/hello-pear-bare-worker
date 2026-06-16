@@ -1,8 +1,8 @@
-# hello-pear-bare
+# hello-pear-bare-worker
 
 > Pear Hello World for Bare CLI with `pear-runtime`
 
-End-to-end boilerplate for embedding [pear-runtime](https://github.com/holepunchto/pear-runtime) into a [Bare](https://github.com/holepunchto/bare) CLI with peer-to-peer OTA update support and standalone builds.
+End-to-end boilerplate for embedding [pear-runtime](https://github.com/holepunchto/pear-runtime) into the worker of a [Bare](https://github.com/holepunchto/bare) CLI with peer-to-peer OTA update support and standalone builds.
 
 - Peer-to-Peer Over-the-Air updates
 - Bare worker process via `PearRuntime.run(...)`
