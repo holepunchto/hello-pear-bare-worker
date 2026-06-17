@@ -9,6 +9,8 @@
     "format": "prettier . --write",
     "test": "brittle-bare test/index.js",
     "lint": "prettier . --check && lunte",
+    "check:worker-sync": "node scripts/sync-worker.js check ../hello-pear-bare-worker ../hello-pear-bare ../hello-pear-electron",
+    "sync:worker": "node scripts/sync-worker.js sync ../hello-pear-bare-worker ../hello-pear-bare ../hello-pear-electron",
     "start": "bare bin.js --no-updates",
     "make": "node scripts/make.js",
     "make:darwin-arm64": "bare-build --name hello-pear-bare-worker --standalone --host darwin-arm64 --out ./out/darwin-arm64 bin.js",

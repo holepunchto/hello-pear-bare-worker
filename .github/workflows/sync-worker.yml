@@ -1,0 +1,90 @@
+name: Sync Worker
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - workers/main.js
+      - worker-managed-deps.json
+      - worker-sync.config.json
+      - scripts/sync-worker.js
+      - .github/workflows/sync-worker.yml
+  workflow_dispatch:
+
+jobs:
+  targets:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: matrix
+        run: |
+          matrix="$(node <<'EOF'
+          const fs = require('fs')
+          const cfg = JSON.parse(fs.readFileSync('worker-sync.config.json', 'utf8'))
+          process.stdout.write(JSON.stringify(cfg.targets))
+          EOF
+          )"
+          echo "matrix=${matrix}" >> "$GITHUB_OUTPUT"
+
+  sync:
+    needs: targets
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.targets.outputs.matrix) }}
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Validate token
+        env:
+          WORKER_SYNC_TOKEN: ${{ secrets.WORKER_SYNC_TOKEN }}
+        run: |
+          test -n "$WORKER_SYNC_TOKEN"
+
+      - name: Clone target repo
+        env:
+          WORKER_SYNC_TOKEN: ${{ secrets.WORKER_SYNC_TOKEN }}
+          TARGET_REPO: ${{ matrix.repo }}
+          TARGET_BRANCH: ${{ matrix.branch }}
+        run: |
+          git clone --depth 1 --branch "$TARGET_BRANCH" "https://x-access-token:${WORKER_SYNC_TOKEN}@github.com/${TARGET_REPO}.git" target
+
+      - name: Sync worker
+        run: node scripts/sync-worker.js sync ./target
+
+      - name: Detect changes
+        id: changes
+        working-directory: ./target
+        run: |
+          if git diff --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create pull request
+        if: steps.changes.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.WORKER_SYNC_TOKEN }}
+          path: ./target
+          branch: chore/sync-worker
+          delete-branch: true
+          base: ${{ matrix.branch }}
+          commit-message: 'chore: sync shared worker'
+          title: 'chore: sync shared worker'
+          body: |
+            Sync `workers/main.js` and worker-managed dependencies from the canonical worker repo.
+
+            This PR was generated automatically.

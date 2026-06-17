@@ -1,0 +1,17 @@
+{
+  "workerPath": "workers/main.js",
+  "targets": [
+    {
+      "repo": "holepunchto/hello-pear-bare-worker",
+      "branch": "main"
+    },
+    {
+      "repo": "holepunchto/hello-pear-bare",
+      "branch": "main"
+    },
+    {
+      "repo": "holepunchto/hello-pear-electron",
+      "branch": "main"
+    }
+  ]
+}
